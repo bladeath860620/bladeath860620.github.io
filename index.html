@@ -44,10 +44,10 @@ rect:hover {  fill:blue; }
 <script>
 function dashboard(id, fData){
     var barColor = 'steelblue';
-    function segColor(c){ return {竊盜:"#3C896D", 傷害:"#E06262",殺人:"#E07F18"}[c]; }
+    function segColor(c){ return {竊盜:"#3C896D", 傷害:"#E06262",殺人:"#E07F18",家暴:"#A65363"}[c]; }
     
     // compute total for each state.
-    fData.forEach(function(d){d.total=d.freq.竊盜+d.freq.傷害+d.freq.殺人;});
+    fData.forEach(function(d){d.total=d.freq.竊盜+d.freq.傷害+d.freq.殺人+d.freq.家暴;});
     
     // function to handle histogram.
     function histoGram(fD){
@@ -237,7 +237,7 @@ function dashboard(id, fData){
     }
     
     // calculate total frequency by segment for all state.
-    var tF = ['竊盜','傷害','殺人'].map(function(d){ 
+    var tF = ['竊盜','傷害','殺人','家暴'].map(function(d){ 
         return {type:d, freq: d3.sum(fData.map(function(t){ return t.freq[d];}))}; 
     });    
     
@@ -250,29 +250,28 @@ function dashboard(id, fData){
 }
 </script>
 <script>
-var freqData=[
-{State:'基隆',freq:{竊盜:4786, 傷害:1319, 殺人:249}}
-,{State:'台北',freq:{竊盜:1101, 傷害:412, 殺人:674}}
-,{State:'新北',freq:{竊盜:932, 傷害:2149, 殺人:418}}
-,{State:'桃園',freq:{竊盜:832, 傷害:1152, 殺人:1862}}
-,{State:'新竹',freq:{竊盜:4481, 傷害:3304, 殺人:948}}
-,{State:'苗栗',freq:{竊盜:1619, 傷害:167, 殺人:1063}}
-,{State:'台中',freq:{竊盜:1819, 傷害:247, 殺人:1203}}
-,{State:'彰化',freq:{竊盜:4498, 傷害:3852, 殺人:942}}
-,{State:'雲林',freq:{竊盜:345, 傷害:1849, 殺人:1534}}
-,{State:'嘉義',freq:{竊盜:1657, 傷害:379, 殺人:4221}}
-,{State:'台南',freq:{竊盜:112, 傷害:359, 殺人:4431}}
-,{State:'高雄',freq:{竊盜:1562, 傷害:899, 殺人:3451}}
-,{State:'屏東',freq:{竊盜:152, 傷害:679, 殺人:651}}
-,{State:'台東',freq:{竊盜:516, 傷害:749, 殺人:4331}}
-,{State:'花蓮',freq:{竊盜:972, 傷害:6379, 殺人:4271}}
-,{State:'宜蘭',freq:{竊盜:2342, 傷害:5439, 殺人:454}}
-,{State:'南投',freq:{竊盜:1652, 傷害:659, 殺人:487}}
-,{State:'澎湖',freq:{竊盜:1762, 傷害:779, 殺人:756}}
-,{State:'蘭嶼',freq:{竊盜:782, 傷害:398, 殺人:3456}}
-,{State:'金門',freq:{竊盜:872, 傷害:3554, 殺人:987}}
-,{State:'連江',freq:{竊盜:862, 傷害:365, 殺人:543}}
-];
+var freqData=[{State:'基隆',freq:{竊盜:478, 傷害:119, 殺人:24,家暴:453}}
+                    ,{State:'台北',freq:{竊盜:101, 傷害:412, 殺人:27,家暴:435}}
+                    ,{State:'新北',freq:{竊盜:932, 傷害:149, 殺人:48,家暴:546}}
+                    ,{State:'桃園',freq:{竊盜:832, 傷害:112, 殺人:18,家暴:434}}
+                    ,{State:'新竹',freq:{竊盜:481, 傷害:334, 殺人:34,家暴:234}}
+                    ,{State:'苗栗',freq:{竊盜:169, 傷害:167, 殺人:13,家暴:435}}
+                    ,{State:'台中',freq:{竊盜:119, 傷害:247, 殺人:23,家暴:789}}
+                    ,{State:'彰化',freq:{竊盜:498, 傷害:382, 殺人:42,家暴:234}}
+                    ,{State:'雲林',freq:{竊盜:345, 傷害:189, 殺人:13,家暴:742}}
+                    ,{State:'嘉義',freq:{竊盜:157, 傷害:379, 殺人:21,家暴:345}}
+                    ,{State:'台南',freq:{竊盜:112, 傷害:359, 殺人:31,家暴:234}}
+                    ,{State:'高雄',freq:{竊盜:162, 傷害:899, 殺人:51,家暴:908}}
+                    ,{State:'屏東',freq:{竊盜:152, 傷害:679, 殺人:11,家暴:435}}
+                    ,{State:'台東',freq:{竊盜:516, 傷害:749, 殺人:11,家暴:234}}
+                    ,{State:'花蓮',freq:{竊盜:972, 傷害:639, 殺人:10,家暴:865}}
+                    ,{State:'宜蘭',freq:{竊盜:232, 傷害:549, 殺人:34,家暴:324}}
+                    ,{State:'南投',freq:{竊盜:162, 傷害:659, 殺人:27,家暴:234}}
+                    ,{State:'澎湖',freq:{竊盜:172, 傷害:779, 殺人:46,家暴:754}}
+                    ,{State:'蘭嶼',freq:{竊盜:782, 傷害:398, 殺人:36,家暴:274}}
+                    ,{State:'金門',freq:{竊盜:872, 傷害:354, 殺人:27,家暴:745}}
+                    ,{State:'連江',freq:{竊盜:862, 傷害:365, 殺人:13,家暴:368}}
+                    ];
 
 dashboard('#dashboard',freqData);
 </script>
