@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Statistic Project</title>
+</head>
+<style>
+    body{
+        width:1200px;
+        margin:20px auto;
+        background: #be7f35;
+    }
+    rect:hover {  fill:blue; }
+    .axis {  font: 10px sans-serif; }
+</style>
+<body>
+    I need healing.
+    <form>
+        <select id = "season" value = "">
+            <option value = "0"> 105/04/01 ~ 105/06/30</option>
+            <option value = "1"> 105/06/01 ~ 105/09/30</option>
+            <option value = "2"> 105/10/01 ~ 105/12/31</option>
+            <option value = "3"> 106/01/01 ~ 106/03/31</option>
+        </select>
+        <input type = "button" value = "Go !!" onclick = "changeId()"></input>
+    </form>
+    <br>
+    <div id='dashboard'></div>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script>
+        var dataId = document.getElementById("season").value;
+
+        function changeId(){
+            dataId = document.getElementById("season").value;
+            d3.selectAll("svg").remove();
+
+            d3.csv("./10504-10506.csv", function(data4_6) {
+                //console.log(data4_6);
+                d3.csv("./10507-10509.csv", function(data7_9) {
+                    //console.log(data7_9);
+                    d3.csv("./10510-10512.csv", function(data10_12) {
+                        //console.log(data10_12);
+                        d3.csv("./10601-10603.csv", function(data1_3) {
+                            //console.log(data1_3);
+                            var datas = [data4_6, data7_9, data10_12, data1_3];
+
+                            for(j=0; j<4; ++j){
+                                datas[j].total = 0;
+                                for(i=0; i<20; ++i){
+                                    datas[j][i].thievery       = parseInt(datas[j][i].thievery)
+                                    datas[j][i].rapeViolence   = parseInt(datas[j][i].rapeViolence)
+                                    datas[j][i].robbery        = parseInt(datas[j][i].robbery)
+                                    datas[j][i].stealing       = parseInt(datas[j][i].stealing)
+                                    datas[j][i].motor_stealing = parseInt(datas[j][i].motor_stealing)
+                                    datas[j][i].drugs          = parseInt(datas[j][i].drugs)
+                                    datas[j][i].car_stealing   = parseInt(datas[j][i].car_stealing);
+                                    datas[j][i].all            = datas[dataId][i].thievery
+                                                               + datas[dataId][i].rapeViolence
+                                                               + datas[dataId][i].robbery
+                                                               + datas[dataId][i].stealing
+                                                               + datas[dataId][i].motor_stealing
+                                                               + datas[dataId][i].drugs
+                                                               + datas[dataId][i].car_stealing;
+                                    datas[j].total = datas[j].total + datas[j][i].all;
+                                }
+                            }
+
+                            var numberDatas = datas[dataId].filter(function(word){return word.length > 4;});
+
+
+                            function dashBoard(id, datas, dataId){
+                                var barColor = '#09d5cf';
+                                //city,thievery,rapeViolence,robbery,stealing,motor_stealing,drugs,car_stealing
+                                function segColor(c){ return {thievery:       "#bb0e0e",
+                                                              rapeViolence:   "#d65309",
+                                                              robbery:        "#d7bc08",
+                                                              stealing:       "#51cc0f",
+                                                              motor_stealing: "#0531b5",
+                                                              drugs:          "#6d09c6",
+                                                              car_stealing:   "#7e7575"}[c];
+                                }
+                                function histoGram(datas, dataId){
+                                    var hG = {},
+                                        hGDim = {t: 60, r: 0, b: 30, l: 0};
+                                    hGDim.w = 1200 - hGDim.l - hGDim.r,
+                                    hGDim.h = 300 - hGDim.t - hGDim.b;
+
+                                    var hGsvg = d3.select(id).append("svg")
+                                        .attr("width"    , hGDim.w + hGDim.l + hGDim.r)
+                                        .attr("height"   , hGDim.h + hGDim.t + hGDim.b).append("g")
+                                        .attr("transform", "translate(" + hGDim.l + "," + hGDim.t + ")");
+
+                                    ///////.domain([0, datas[dataId].city]);
+                                    var x = d3.scale.ordinal().rangeRoundBands([0, hGDim.w], 0.1)
+                                            .domain(datas[dataId].map(function(d){return d.city}));
+                                            //.domain(datas[dataId], function(d){return d.city});
+                                    hGsvg.append("g").attr("class", "x axis")
+                                        .attr("transform", "translate(0," + hGDim.h + ")")
+                                        .call(d3.svg.axis().scale(x).orient("bottom"));
+
+                                    function temp(item){
+                                      //console.log(item.all);
+                                      saveALL.push(item.all);
+                                    }
+                                    var saveALL = [];
+                                    datas[dataId].forEach(temp);
+                                    //console.log(saveALL);
+
+                                    var y = d3.scale.linear().range([hGDim.h, 0])
+                                            .domain([0, d3.max(saveALL)]);
+                                    //console.log(y(10));
+
+
+                                    var bars = hGsvg.selectAll(".bar").data(datas[dataId]).enter()
+                                            .append("g").attr("class", "bar");
+
+                                    bars.append("rect")
+                                        .attr("x",  function(d) {return x(d.city)})
+                                        .attr("y",  function(d) {return y(d.all)})
+                                        //d.map(datas[dataId].filter(function(word){return word.length > 4;}))
+                                        .attr("width", x.rangeBand())
+                                        .attr("height", function(d) { return hGDim.h - y(d.all) ; })
+                                        .attr('fill',barColor);
+
+                                    bars.append("text").text(function(d){ return d.all})
+                                        .attr("x", function(d) { return x(d.city)+x.rangeBand()/2; })
+                                        .attr("y", function(d) { return y(d.all)-5; })
+                                        .attr("text-anchor", "middle");
+
+
+                                    return hG;
+                                }
+
+                                function pieChart(datas, dataId){
+                                    var pC ={},    pieDim ={w:500, h: 500};
+                                    pieDim.r = Math.min(pieDim.w, pieDim.h) / 2;
+
+                                    var piesvg = d3.select(id).append("svg")
+                                        .attr("width", pieDim.w).attr("height", pieDim.h).append("g")
+                                        .attr("transform", "translate("+pieDim.w/2+","+pieDim.h/2+")");
+
+                                    var arc = d3.svg.arc()
+                                             .outerRadius(pieDim.r - 10)
+                                             .innerRadius(0);
+
+                                     function temp(item){
+                                       //console.log(item.all);
+                                       saveALL.push(item.all);
+                                     }
+                                     var saveALL = [];
+                                     datas[dataId].forEach(temp);
+
+                                     var pie = d3.layout.pie().sort(null).value(saveALL);
+
+                                    piesvg.selectAll("path").data(datas[dataId]).enter().append("path").attr("d", arc)
+                                        .each(function(d) { this._current = d; })
+                                        .style("fill", function(d) { return segColor(d.type); });
+                                }
+
+                                histoGram(datas, dataId);
+                                pieChart(datas, dataId);
+                            }
+                            dashBoard('#dashboard', datas, dataId);
+                        });
+                    });
+                });
+            });
+        }
+
+    </script>
+
+</body>
+</html>

@@ -1,36 +1,29 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Statistic Project</title>
+	<title></title>
+
 </head>
+<meta charset="utf-8">
 <style>
-    body{
-        width:1200px;
-        margin:20px auto;
-        background: #EFC492;
-    }
+body{
+    width:1200px;
+    margin:20px auto;
+    background: #EFC492;
+    text-align: center;
+    font-size: 30px;
+}
 </style>
 <body>
-    <div id='dashboard'></div>
-    <script src="http://d3js.org/d3.v3.min.js"></script>
-    <script>
-        d3.csv("https://bladeath860620.github.io/10504-10506.csv", function(data4_6) {
-            console.log(data4_6);
-            d3.csv("https://bladeath860620.github.io/10507-10509.csv", function(data7_9) {
-                console.log(data7_9);
-                d3.csv("https://bladeath860620.github.io/10510-10512.csv", function(data10_12) {
-                    console.log(data10_12);
-                    d3.csv("https://bladeath860620.github.io/10601-10603.csv", function(data1_3) {
-                        console.log(data1_3);
-                    });
-                });
-            });
-        });
-        
-        function dashBoard(id, fData){
-            var barColor = 'steelblue';
-            
-        }
-    </script>
+    近年來，隨著台灣政治民主、社會開放，社會結構改變快速，也出現了許多社會問題，<br>
+    其中各年的犯罪對社會治安產生很大的衝擊，因為科技越來越發達，犯罪的類型和手法<br>
+    也趨向多元和科技化。<br>
+    透過數量及其所佔比率加以統計分析，得出各類型犯罪的消長情形及未來發展趨勢，以<br>
+    瞭解台灣地區犯罪狀況在數量及類型上的變化趨勢。<br>
+    <form>
+        <a href = "./statistic.html">
+            <input type = "button" value = "Enter !!" ></input>
+        </a>
+    </form>
 </body>
 </html>
