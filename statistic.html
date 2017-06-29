@@ -28,10 +28,10 @@ rect:hover {  fill:blue; }
     border-spacing: 0px;
 }
 .legend td{
-    padding:8px 5px;
+    padding:15px 5px;
     vertical-align:bottom;
 }
-.legendFreq, .legendPerc{
+.legendvalue, .legendPerc{
     align:right;
     width:50px;
 }
@@ -69,7 +69,7 @@ function changeId(){
     document.getElementsByClassName("legend")[cnt].deleteRow(0);
     document.getElementsByClassName("legend")[cnt].deleteRow(0);
     cnt = cnt + 1;
-    dashboard('#dashboard',freqData[dataId]);
+    dashboard('#dashboard',valueData[dataId]);
 }
 
 function dashboard(id, fData){
@@ -82,135 +82,105 @@ function dashboard(id, fData){
                                   drugs:          "#000000",
                                   car_stealing:   "#708090"}[c];
     }
-    // compute total for each state.
-    fData.forEach(function(d){d.total=d.freq.thievery+d.freq.rape+d.freq.robbery+d.freq.stealing+d.freq.motor_stealing+d.freq.drugs+d.freq.car_stealing});
+    fData.forEach(function(d){d.total=d.value.thievery+d.value.rape+d.value.robbery+d.value.stealing+d.value.motor_stealing+d.value.drugs+d.value.car_stealing});
 
-    // function to handle histogram.
     function histoGram(fD){
         var hG={},    hGDim = {t: 60, r: 0, b: 30, l: 0};
         hGDim.w = 1200 - hGDim.l - hGDim.r,
         hGDim.h = 300 - hGDim.t - hGDim.b;
 
-        //create svg for histogram.
         var hGsvg = d3.select(id).append("svg")
             .attr("width", hGDim.w + hGDim.l + hGDim.r)
             .attr("height", hGDim.h + hGDim.t + hGDim.b).append("g")
             .attr("transform", "translate(" + hGDim.l + "," + hGDim.t + ")");
 
-        // create function for x-axis mapping.
         var x = d3.scale.ordinal().rangeRoundBands([0, hGDim.w], 0.1)
                 .domain(fD.map(function(d) { return d[0]; }));
 
-        // Add x-axis to the histogram svg.
         hGsvg.append("g").attr("class", "x axis")
             .attr("transform", "translate(0," + hGDim.h + ")")
             .call(d3.svg.axis().scale(x).orient("bottom"));
 
-        // Create function for y-axis map.
         var y = d3.scale.linear().range([hGDim.h, 0])
                 .domain([0, d3.max(fD, function(d) { return d[1]; })]);
 
-        // Create bars for histogram to contain rectangles and freq labels.
         var bars = hGsvg.selectAll(".bar").data(fD).enter()
                 .append("g").attr("class", "bar");
 
-        //create the rectangles.
         bars.append("rect")
             .attr("x", function(d) { return x(d[0]); })
             .attr("y", function(d) { return y(d[1]); })
             .attr("width", x.rangeBand())
             .attr("height", function(d) { return hGDim.h - y(d[1]); })
             .attr('fill',barColor)
-            .on("click",mouseclick)
-            /*.on("mouseout",mouseout)*/;// mouseout is defined below.
+            .on("click",mouseclick);
 
-        //Create the frequency labels above the rectangles.
         bars.append("text").text(function(d){ return d3.format(",")(d[1])})
             .attr("x", function(d) { return x(d[0])+x.rangeBand()/2; })
             .attr("y", function(d) { return y(d[1])-5; })
             .attr("text-anchor", "middle");
 
-        function mouseclick(d){  // utility function to be called on mouseover.
-            // filter for selected state.
+        function mouseclick(d){
             var st = fData.filter(function(s){ return s.State == d[0];})[0],
-                nD = d3.keys(st.freq).map(function(s){ return {type:s, freq:st.freq[s]};});
-            // call update functions of pie-chart and legend.
+                nD = d3.keys(st.value).map(function(s){ return {type:s, value:st.value[s]};});
             pC.update(nD,0);
             leg.update(nD);
 
         }
 
-        function mouseout(d){    // utility function to be called on mouseout.
-            // reset the pie-chart and legend.
+        function mouseout(d){
             pC.update(tF,inner);
             leg.update(tF);
         }
 
-        // create function to update the bars. This will be used by pie-chart.
         hG.update = function(nD, color){
-            // update the domain of the y-axis map to reflect change in frequencies.
             y.domain([0, d3.max(nD, function(d) { return d[1]; })]);
 
-            // Attach the new data to the bars.
             var bars = hGsvg.selectAll(".bar").data(nD);
 
-            // transition the height and color of rectangles.
             bars.select("rect").transition().duration(500)
                 .attr("y", function(d) {return y(d[1]); })
                 .attr("height", function(d) { return hGDim.h - y(d[1]); })
                 .attr("fill", color);
 
-            // transition the frequency labels location and change value.
             bars.select("text").transition().duration(500)
                 .text(function(d){ return d3.format(",")(d[1])})
                 .attr("y", function(d) {return y(d[1])-5; });
         }
         return hG;
     }
-    // function to handle pieChart.
+
     function pieChart(pD,inner){
-        var pC ={},    pieDim ={w:350, h: 350};
+        var pC ={},    pieDim ={w:500, h: 500};
         pieDim.r = Math.min(pieDim.w, pieDim.h) / 2;
 
-        // create svg for pie chart.
         var piesvg = d3.select(id).append("svg")
             .attr("width", pieDim.w).attr("height", pieDim.h).append("g")
             .attr("transform", "translate("+pieDim.w/2+","+pieDim.h/2+")");
 
-        // create function to draw the arcs of the pie slices.
         var arc = d3.svg.arc()
                  .outerRadius(pieDim.r - 10)
                  .innerRadius(inner);
 
-        // create a function to compute the pie slice angles.
-        var pie = d3.layout.pie().sort(null).value(function(d) { return d.freq; });
-        // Draw the pie slices.
+        var pie = d3.layout.pie().sort(null).value(function(d) { return d.value; });
         piesvg.selectAll("path").data(pie(pD)).enter().append("path").attr("d", arc)
             .each(function(d) { this._current = d; })
             .style("fill", function(d) { return segColor(d.data.type); })
             .on("mouseover",mouseover).on("mouseout",mouseout).on("click",mouseClick);
 
-        // create function to update pie-chart. This will be used by histogram.
         pC.update = function(nD, inner){
             piesvg.selectAll("path").data(pie(nD)).transition().duration(500)
-                .attrTween("d", arcTween)
-                /*.attrTween("d", radTween)*/;
+                .attrTween("d", arcTween);
             arc.innerRadius(inner);
         }
-        // Utility function to be called on mouseover a pie slice.
         function mouseover(d){
-            // call the update function of histogram with new data.
             hG.update(fData.map(function(v){
-                return [v.State,v.freq[d.data.type]];}),segColor(d.data.type));
+                return [v.State,v.value[d.data.type]];}),segColor(d.data.type));
         }
-        //Utility function to be called on mouseout a pie slice.
         function mouseout(d){
-            // call the update function of histogram with all data.
             hG.update(fData.map(function(v){
                 return [v.State,v.total];}), barColor);
         }
-        // Animating the pie-slice requiring a custom function which specifies
-        // how the intermediate paths should be drawn.
         function arcTween(a) {
             var i = d3.interpolate(this._current, a);
             this._current = i(0);
@@ -227,155 +197,141 @@ function dashboard(id, fData){
         return pC;
     }
 
-    // function to handle legend.
     function legend(lD){
         var leg = {};
 
-        // create table for legend.
         var legend = d3.select(id).append("table").attr('class','legend');
 
-        // create one row per segment.
         var tr = legend.append("tbody").selectAll("tr").data(lD).enter().append("tr");
 
-        // create the first column for each segment.
         tr.append("td").append("svg").attr("width", '16').attr("height", '16').append("rect")
             .attr("width", '16').attr("height", '16')
             .attr("fill",function(d){ return segColor(d.type); });
 
-        // create the second column for each segment.
         tr.append("td").text(function(d){ return d.type;});
 
-        // create the third column for each segment.
-        tr.append("td").attr("class",'legendFreq')
-            .text(function(d){ return d3.format(",")(d.freq);});
+        tr.append("td").attr("class",'legendvalue')
+            .text(function(d){ return d3.format(",")(d.value);});
 
-        // create the fourth column for each segment.
         tr.append("td").attr("class",'legendPerc')
             .text(function(d){ return getLegend(d,lD);});
 
-        // Utility function to be used to update the legend.
         leg.update = function(nD){
-            // update the data attached to the row elements.
             var l = legend.select("tbody").selectAll("tr").data(nD);
 
-            // update the frequencies.
-            l.select(".legendFreq").text(function(d){ return d3.format(",")(d.freq);});
+            l.select(".legendvalue").text(function(d){ return d3.format(",")(d.value);});
 
-            // update the percentage column.
             l.select(".legendPerc").text(function(d){ return getLegend(d,nD);});
         }
 
-        function getLegend(d,aD){ // Utility function to compute percentage.
-            return d3.format(".2%")(d.freq/d3.sum(aD.map(function(v){ return v.freq; })));
+        function getLegend(d,aD){
+            return d3.format(".2%")(d.value/d3.sum(aD.map(function(v){ return v.value; })));
         }
 
         return leg;
     }
 
-    // calculate total frequency by segment for all state.
     var tF = ['thievery','rape','robbery','stealing','motor_stealing','drugs','car_stealing'].map(function(d){
-        return {type:d, freq: d3.sum(fData.map(function(t){ return t.freq[d];}))};
+        return {type:d, value: d3.sum(fData.map(function(t){ return t.value[d];}))};
     });
 
-    // calculate total frequency by state for all segment.
     var sF = fData.map(function(d){return [d.State,d.total];});
 
-    var hG = histoGram(sF), // create the histogram.
-        pC = pieChart(tF,0), // create the pie-chart.
-        leg= legend(tF);  // create the legend.
+    var hG = histoGram(sF),
+        pC = pieChart(tF,0),
+        leg= legend(tF);
 }
 </script>
 <script>
-var freqData = [];
+var valueData = [];
 
-freqData[0]=[{State:'台北市',freq:{thievery:115, rape:14, robbery:5, stealing:11, motor_stealing:150, drugs:1075, car_stealing:12}}
-,{State:'新北市',freq:{thievery:146, rape:12, robbery:16, stealing:14, motor_stealing:639, drugs:2138, car_stealing:82}}
-,{State:'桃園市',freq:{thievery:65, rape:6, robbery:5, stealing:9, motor_stealing:683, drugs:1146, car_stealing:246}}
-,{State:'台中市',freq:{thievery:37, rape:9, robbery:8, stealing:4, motor_stealing:302, drugs:867, car_stealing:62}}
-,{State:'台南市',freq:{thievery:93, rape:18, robbery:6, stealing:8, motor_stealing:290, drugs:435, car_stealing:99}}
-,{State:'高雄市',freq:{thievery:17, rape:4, robbery:8, stealing:19, motor_stealing:473, drugs:939, car_stealing:154}}
-,{State:'基隆市',freq:{thievery:19, rape:5, robbery:1, stealing:2, motor_stealing:70, drugs:355, car_stealing:2}}
-,{State:'新竹市',freq:{thievery:24, rape:5, robbery:1, stealing:0, motor_stealing:86, drugs:102, car_stealing:29}}
-,{State:'嘉義市',freq:{thievery:3, rape:2, robbery:1, stealing:0, motor_stealing:23, drugs:133, car_stealing:27}}
-,{State:'新竹縣',freq:{thievery:29, rape:1, robbery:3, stealing:2, motor_stealing:79, drugs:176, car_stealing:81}}
-,{State:'苗栗縣',freq:{thievery:20, rape:1, robbery:1, stealing:1, motor_stealing:85, drugs:146, car_stealing:46}}
-,{State:'彰化縣',freq:{thievery:24, rape:11, robbery:3, stealing:6, motor_stealing:64, drugs:344, car_stealing:40}}
-,{State:'南投縣',freq:{thievery:26, rape:1, robbery:2, stealing:1, motor_stealing:88, drugs:179, car_stealing:23}}
-,{State:'雲林縣',freq:{thievery:32, rape:1, robbery:3, stealing:1, motor_stealing:64, drugs:240, car_stealing:26}}
-,{State:'嘉義縣',freq:{thievery:8, rape:3, robbery:0, stealing:1, motor_stealing:39, drugs:115, car_stealing:28}}
-,{State:'屏東縣',freq:{thievery:16, rape:0, robbery:0, stealing:3, motor_stealing:117, drugs:408, car_stealing:84}}
-,{State:'宜蘭縣',freq:{thievery:20, rape:4, robbery:2, stealing:0, motor_stealing:60, drugs:148, car_stealing:39}}
-,{State:'花蓮縣',freq:{thievery:22, rape:3, robbery:1, stealing:0, motor_stealing:27, drugs:194, car_stealing:17}}
-,{State:'台東縣',freq:{thievery:2, rape:0, robbery:0, stealing:0, motor_stealing:31, drugs:56, car_stealing:1}}
-,{State:'澎湖縣',freq:{thievery:8, rape:1, robbery:0, stealing:0, motor_stealing:7, drugs:12, car_stealing:0}}
+valueData[0]=[{State:'台北市',value:{thievery:115, rape:14, robbery:5, stealing:11, motor_stealing:150, drugs:1075, car_stealing:12}}
+,{State:'新北市',value:{thievery:146, rape:12, robbery:16, stealing:14, motor_stealing:639, drugs:2138, car_stealing:82}}
+,{State:'桃園市',value:{thievery:65, rape:6, robbery:5, stealing:9, motor_stealing:683, drugs:1146, car_stealing:246}}
+,{State:'台中市',value:{thievery:37, rape:9, robbery:8, stealing:4, motor_stealing:302, drugs:867, car_stealing:62}}
+,{State:'台南市',value:{thievery:93, rape:18, robbery:6, stealing:8, motor_stealing:290, drugs:435, car_stealing:99}}
+,{State:'高雄市',value:{thievery:17, rape:4, robbery:8, stealing:19, motor_stealing:473, drugs:939, car_stealing:154}}
+,{State:'基隆市',value:{thievery:19, rape:5, robbery:1, stealing:2, motor_stealing:70, drugs:355, car_stealing:2}}
+,{State:'新竹市',value:{thievery:24, rape:5, robbery:1, stealing:0, motor_stealing:86, drugs:102, car_stealing:29}}
+,{State:'嘉義市',value:{thievery:3, rape:2, robbery:1, stealing:0, motor_stealing:23, drugs:133, car_stealing:27}}
+,{State:'新竹縣',value:{thievery:29, rape:1, robbery:3, stealing:2, motor_stealing:79, drugs:176, car_stealing:81}}
+,{State:'苗栗縣',value:{thievery:20, rape:1, robbery:1, stealing:1, motor_stealing:85, drugs:146, car_stealing:46}}
+,{State:'彰化縣',value:{thievery:24, rape:11, robbery:3, stealing:6, motor_stealing:64, drugs:344, car_stealing:40}}
+,{State:'南投縣',value:{thievery:26, rape:1, robbery:2, stealing:1, motor_stealing:88, drugs:179, car_stealing:23}}
+,{State:'雲林縣',value:{thievery:32, rape:1, robbery:3, stealing:1, motor_stealing:64, drugs:240, car_stealing:26}}
+,{State:'嘉義縣',value:{thievery:8, rape:3, robbery:0, stealing:1, motor_stealing:39, drugs:115, car_stealing:28}}
+,{State:'屏東縣',value:{thievery:16, rape:0, robbery:0, stealing:3, motor_stealing:117, drugs:408, car_stealing:84}}
+,{State:'宜蘭縣',value:{thievery:20, rape:4, robbery:2, stealing:0, motor_stealing:60, drugs:148, car_stealing:39}}
+,{State:'花蓮縣',value:{thievery:22, rape:3, robbery:1, stealing:0, motor_stealing:27, drugs:194, car_stealing:17}}
+,{State:'台東縣',value:{thievery:2, rape:0, robbery:0, stealing:0, motor_stealing:31, drugs:56, car_stealing:1}}
+,{State:'澎湖縣',value:{thievery:8, rape:1, robbery:0, stealing:0, motor_stealing:7, drugs:12, car_stealing:0}}
 ];
 
-freqData[1]=[{State:'台北市',freq:{thievery:120, rape:22, robbery:6, stealing:5, motor_stealing:133, drugs:1128, car_stealing:32}}
-,{State:'新北市',freq:{thievery:141, rape:9, robbery:13, stealing:15, motor_stealing:560, drugs:2436, car_stealing:94}}
-,{State:'桃園市',freq:{thievery:26, rape:5, robbery:5, stealing:7, motor_stealing:724, drugs:1769, car_stealing:246}}
-,{State:'台中市',freq:{thievery:34, rape:6, robbery:6, stealing:5, motor_stealing:328, drugs:953, car_stealing:58}}
-,{State:'台南市',freq:{thievery:91, rape:18, robbery:4, stealing:4, motor_stealing:221, drugs:622, car_stealing:54}}
-,{State:'高雄市',freq:{thievery:35, rape:6, robbery:4, stealing:14, motor_stealing:497, drugs:1132, car_stealing:167}}
-,{State:'基隆市',freq:{thievery:21, rape:4, robbery:4, stealing:1, motor_stealing:63, drugs:309, car_stealing:3}}
-,{State:'新竹市',freq:{thievery:14, rape:1, robbery:0, stealing:2, motor_stealing:97, drugs:123, car_stealing:17}}
-,{State:'嘉義市',freq:{thievery:6, rape:6, robbery:1, stealing:0, motor_stealing:41, drugs:185, car_stealing:13}}
-,{State:'新竹縣',freq:{thievery:23, rape:1, robbery:4, stealing:2, motor_stealing:121, drugs:340, car_stealing:103}}
-,{State:'苗栗縣',freq:{thievery:14, rape:1, robbery:1, stealing:1, motor_stealing:62, drugs:240, car_stealing:24}}
-,{State:'彰化縣',freq:{thievery:13, rape:1, robbery:3, stealing:6, motor_stealing:95, drugs:476, car_stealing:24}}
-,{State:'南投縣',freq:{thievery:33, rape:3, robbery:1, stealing:4, motor_stealing:74, drugs:290, car_stealing:41}}
-,{State:'雲林縣',freq:{thievery:40, rape:0, robbery:2, stealing:2, motor_stealing:69, drugs:358, car_stealing:17}}
-,{State:'嘉義縣',freq:{thievery:3, rape:3, robbery:0, stealing:1, motor_stealing:33, drugs:213, car_stealing:11}}
-,{State:'屏東縣',freq:{thievery:9, rape:0, robbery:0, stealing:2, motor_stealing:108, drugs:416, car_stealing:53}}
-,{State:'宜蘭縣',freq:{thievery:30, rape:5, robbery:1, stealing:0, motor_stealing:69, drugs:252, car_stealing:32}}
-,{State:'花蓮縣',freq:{thievery:13, rape:2, robbery:2, stealing:0, motor_stealing:43, drugs:233, car_stealing:23}}
-,{State:'台東縣',freq:{thievery:5, rape:1, robbery:0, stealing:0, motor_stealing:33, drugs:113, car_stealing:12}}
-,{State:'澎湖縣',freq:{thievery:2, rape:0, robbery:0, stealing:0, motor_stealing:5, drugs:14, car_stealing:1}}
+valueData[1]=[{State:'台北市',value:{thievery:120, rape:22, robbery:6, stealing:5, motor_stealing:133, drugs:1128, car_stealing:32}}
+,{State:'新北市',value:{thievery:141, rape:9, robbery:13, stealing:15, motor_stealing:560, drugs:2436, car_stealing:94}}
+,{State:'桃園市',value:{thievery:26, rape:5, robbery:5, stealing:7, motor_stealing:724, drugs:1769, car_stealing:246}}
+,{State:'台中市',value:{thievery:34, rape:6, robbery:6, stealing:5, motor_stealing:328, drugs:953, car_stealing:58}}
+,{State:'台南市',value:{thievery:91, rape:18, robbery:4, stealing:4, motor_stealing:221, drugs:622, car_stealing:54}}
+,{State:'高雄市',value:{thievery:35, rape:6, robbery:4, stealing:14, motor_stealing:497, drugs:1132, car_stealing:167}}
+,{State:'基隆市',value:{thievery:21, rape:4, robbery:4, stealing:1, motor_stealing:63, drugs:309, car_stealing:3}}
+,{State:'新竹市',value:{thievery:14, rape:1, robbery:0, stealing:2, motor_stealing:97, drugs:123, car_stealing:17}}
+,{State:'嘉義市',value:{thievery:6, rape:6, robbery:1, stealing:0, motor_stealing:41, drugs:185, car_stealing:13}}
+,{State:'新竹縣',value:{thievery:23, rape:1, robbery:4, stealing:2, motor_stealing:121, drugs:340, car_stealing:103}}
+,{State:'苗栗縣',value:{thievery:14, rape:1, robbery:1, stealing:1, motor_stealing:62, drugs:240, car_stealing:24}}
+,{State:'彰化縣',value:{thievery:13, rape:1, robbery:3, stealing:6, motor_stealing:95, drugs:476, car_stealing:24}}
+,{State:'南投縣',value:{thievery:33, rape:3, robbery:1, stealing:4, motor_stealing:74, drugs:290, car_stealing:41}}
+,{State:'雲林縣',value:{thievery:40, rape:0, robbery:2, stealing:2, motor_stealing:69, drugs:358, car_stealing:17}}
+,{State:'嘉義縣',value:{thievery:3, rape:3, robbery:0, stealing:1, motor_stealing:33, drugs:213, car_stealing:11}}
+,{State:'屏東縣',value:{thievery:9, rape:0, robbery:0, stealing:2, motor_stealing:108, drugs:416, car_stealing:53}}
+,{State:'宜蘭縣',value:{thievery:30, rape:5, robbery:1, stealing:0, motor_stealing:69, drugs:252, car_stealing:32}}
+,{State:'花蓮縣',value:{thievery:13, rape:2, robbery:2, stealing:0, motor_stealing:43, drugs:233, car_stealing:23}}
+,{State:'台東縣',value:{thievery:5, rape:1, robbery:0, stealing:0, motor_stealing:33, drugs:113, car_stealing:12}}
+,{State:'澎湖縣',value:{thievery:2, rape:0, robbery:0, stealing:0, motor_stealing:5, drugs:14, car_stealing:1}}
 ];
 
-freqData[2]=[{State:'台北市',freq:{thievery:121, rape:15, robbery:12, stealing:8, motor_stealing:169, drugs:1004, car_stealing:19}}
-,{State:'新北市',freq:{thievery:129, rape:18, robbery:15, stealing:5, motor_stealing:522, drugs:1934, car_stealing:85}}
-,{State:'桃園市',freq:{thievery:13, rape:7, robbery:6, stealing:4, motor_stealing:706, drugs:1131, car_stealing:191}}
-,{State:'台中市',freq:{thievery:37, rape:6, robbery:2, stealing:5, motor_stealing:272, drugs:822, car_stealing:61}}
-,{State:'台南市',freq:{thievery:79, rape:11, robbery:8, stealing:6, motor_stealing:261, drugs:461, car_stealing:26}}
-,{State:'高雄市',freq:{thievery:33, rape:10, robbery:7, stealing:29, motor_stealing:453, drugs:908, car_stealing:110}}
-,{State:'基隆市',freq:{thievery:8, rape:3, robbery:2, stealing:0, motor_stealing:46, drugs:339, car_stealing:9}}
-,{State:'新竹市',freq:{thievery:21, rape:1, robbery:1, stealing:5, motor_stealing:104, drugs:85, car_stealing:30}}
-,{State:'嘉義市',freq:{thievery:7, rape:2, robbery:2, stealing:0, motor_stealing:23, drugs:108, car_stealing:11}}
-,{State:'新竹縣',freq:{thievery:7, rape:3, robbery:1, stealing:5, motor_stealing:142, drugs:211, car_stealing:88}}
-,{State:'苗栗縣',freq:{thievery:17, rape:2, robbery:2, stealing:0, motor_stealing:65, drugs:140, car_stealing:16}}
-,{State:'彰化縣',freq:{thievery:11, rape:4, robbery:2, stealing:1, motor_stealing:72, drugs:312, car_stealing:19}}
-,{State:'南投縣',freq:{thievery:31, rape:3, robbery:1, stealing:1, motor_stealing:73, drugs:192, car_stealing:27}}
-,{State:'雲林縣',freq:{thievery:30, rape:1, robbery:1, stealing:5, motor_stealing:72, drugs:270, car_stealing:18}}
-,{State:'嘉義縣',freq:{thievery:7, rape:2, robbery:0, stealing:0, motor_stealing:22, drugs:121, car_stealing:15}}
-,{State:'屏東縣',freq:{thievery:9, rape:5, robbery:4, stealing:5, motor_stealing:133, drugs:519, car_stealing:35}}
-,{State:'宜蘭縣',freq:{thievery:21, rape:1, robbery:0, stealing:1, motor_stealing:41, drugs:184, car_stealing:16}}
-,{State:'花蓮縣',freq:{thievery:16, rape:2, robbery:0, stealing:0, motor_stealing:31, drugs:145, car_stealing:16}}
-,{State:'台東縣',freq:{thievery:2, rape:0, robbery:0, stealing:0, motor_stealing:34, drugs:85, car_stealing:0}}
-,{State:'澎湖縣',freq:{thievery:4, rape:0, robbery:0, stealing:0, motor_stealing:5, drugs:8, car_stealing:4}}
+valueData[2]=[{State:'台北市',value:{thievery:121, rape:15, robbery:12, stealing:8, motor_stealing:169, drugs:1004, car_stealing:19}}
+,{State:'新北市',value:{thievery:129, rape:18, robbery:15, stealing:5, motor_stealing:522, drugs:1934, car_stealing:85}}
+,{State:'桃園市',value:{thievery:13, rape:7, robbery:6, stealing:4, motor_stealing:706, drugs:1131, car_stealing:191}}
+,{State:'台中市',value:{thievery:37, rape:6, robbery:2, stealing:5, motor_stealing:272, drugs:822, car_stealing:61}}
+,{State:'台南市',value:{thievery:79, rape:11, robbery:8, stealing:6, motor_stealing:261, drugs:461, car_stealing:26}}
+,{State:'高雄市',value:{thievery:33, rape:10, robbery:7, stealing:29, motor_stealing:453, drugs:908, car_stealing:110}}
+,{State:'基隆市',value:{thievery:8, rape:3, robbery:2, stealing:0, motor_stealing:46, drugs:339, car_stealing:9}}
+,{State:'新竹市',value:{thievery:21, rape:1, robbery:1, stealing:5, motor_stealing:104, drugs:85, car_stealing:30}}
+,{State:'嘉義市',value:{thievery:7, rape:2, robbery:2, stealing:0, motor_stealing:23, drugs:108, car_stealing:11}}
+,{State:'新竹縣',value:{thievery:7, rape:3, robbery:1, stealing:5, motor_stealing:142, drugs:211, car_stealing:88}}
+,{State:'苗栗縣',value:{thievery:17, rape:2, robbery:2, stealing:0, motor_stealing:65, drugs:140, car_stealing:16}}
+,{State:'彰化縣',value:{thievery:11, rape:4, robbery:2, stealing:1, motor_stealing:72, drugs:312, car_stealing:19}}
+,{State:'南投縣',value:{thievery:31, rape:3, robbery:1, stealing:1, motor_stealing:73, drugs:192, car_stealing:27}}
+,{State:'雲林縣',value:{thievery:30, rape:1, robbery:1, stealing:5, motor_stealing:72, drugs:270, car_stealing:18}}
+,{State:'嘉義縣',value:{thievery:7, rape:2, robbery:0, stealing:0, motor_stealing:22, drugs:121, car_stealing:15}}
+,{State:'屏東縣',value:{thievery:9, rape:5, robbery:4, stealing:5, motor_stealing:133, drugs:519, car_stealing:35}}
+,{State:'宜蘭縣',value:{thievery:21, rape:1, robbery:0, stealing:1, motor_stealing:41, drugs:184, car_stealing:16}}
+,{State:'花蓮縣',value:{thievery:16, rape:2, robbery:0, stealing:0, motor_stealing:31, drugs:145, car_stealing:16}}
+,{State:'台東縣',value:{thievery:2, rape:0, robbery:0, stealing:0, motor_stealing:34, drugs:85, car_stealing:0}}
+,{State:'澎湖縣',value:{thievery:4, rape:0, robbery:0, stealing:0, motor_stealing:5, drugs:8, car_stealing:4}}
 ,];
 
-freqData[3]=[{State:'台北市',freq:{thievery:112, rape:13, robbery:6, stealing:1, motor_stealing:152, drugs:806, car_stealing:24}}
-,{State:'新北市',freq:{thievery:113, rape:8, robbery:15, stealing:14, motor_stealing:481, drugs:1568, car_stealing:125}}
-,{State:'桃園市',freq:{thievery:41, rape:5, robbery:12, stealing:2, motor_stealing:575, drugs:1023, car_stealing:287}}
-,{State:'台中市',freq:{thievery:36, rape:2, robbery:6, stealing:10, motor_stealing:290, drugs:502, car_stealing:57}}
-,{State:'台南市',freq:{thievery:119, rape:12, robbery:15, stealing:5, motor_stealing:262, drugs:310, car_stealing:108}}
-,{State:'高雄市',freq:{thievery:22, rape:0, robbery:8, stealing:19, motor_stealing:496, drugs:694, car_stealing:188}}
-,{State:'基隆市',freq:{thievery:25, rape:2, robbery:1, stealing:0, motor_stealing:49, drugs:254, car_stealing:8}}
-,{State:'新竹市',freq:{thievery:14, rape:3, robbery:0, stealing:0, motor_stealing:91, drugs:79, car_stealing:29}}
-,{State:'嘉義市',freq:{thievery:3, rape:1, robbery:0, stealing:0, motor_stealing:19, drugs:81, car_stealing:25}}
-,{State:'新竹縣',freq:{thievery:9, rape:0, robbery:2, stealing:2, motor_stealing:103, drugs:201, car_stealing:70}}
-,{State:'苗栗縣',freq:{thievery:21, rape:1, robbery:3, stealing:2, motor_stealing:53, drugs:100, car_stealing:55}}
-,{State:'彰化縣',freq:{thievery:44, rape:10, robbery:4, stealing:5, motor_stealing:88, drugs:305, car_stealing:51}}
-,{State:'南投縣',freq:{thievery:13, rape:5, robbery:2, stealing:0, motor_stealing:63, drugs:190, car_stealing:36}}
-,{State:'雲林縣',freq:{thievery:15, rape:0, robbery:8, stealing:1, motor_stealing:49, drugs:158, car_stealing:26}}
-,{State:'嘉義縣',freq:{thievery:7, rape:3, robbery:0, stealing:0, motor_stealing:32, drugs:76, car_stealing:18}}
-,{State:'屏東縣',freq:{thievery:19, rape:1, robbery:3, stealing:5, motor_stealing:111, drugs:248, car_stealing:60}}
-,{State:'宜蘭縣',freq:{thievery:24, rape:0, robbery:3, stealing:4, motor_stealing:29, drugs:148, car_stealing:21}}
-,{State:'花蓮縣',freq:{thievery:14, rape:3, robbery:0, stealing:1, motor_stealing:34, drugs:163, car_stealing:10}}
-,{State:'台東縣',freq:{thievery:6, rape:0, robbery:1, stealing:0, motor_stealing:20, drugs:36, car_stealing:1}}
-,{State:'澎湖縣',freq:{thievery:12, rape:1, robbery:0, stealing:0, motor_stealing:4, drugs:3, car_stealing:3}}
+valueData[3]=[{State:'台北市',value:{thievery:112, rape:13, robbery:6, stealing:1, motor_stealing:152, drugs:806, car_stealing:24}}
+,{State:'新北市',value:{thievery:113, rape:8, robbery:15, stealing:14, motor_stealing:481, drugs:1568, car_stealing:125}}
+,{State:'桃園市',value:{thievery:41, rape:5, robbery:12, stealing:2, motor_stealing:575, drugs:1023, car_stealing:287}}
+,{State:'台中市',value:{thievery:36, rape:2, robbery:6, stealing:10, motor_stealing:290, drugs:502, car_stealing:57}}
+,{State:'台南市',value:{thievery:119, rape:12, robbery:15, stealing:5, motor_stealing:262, drugs:310, car_stealing:108}}
+,{State:'高雄市',value:{thievery:22, rape:0, robbery:8, stealing:19, motor_stealing:496, drugs:694, car_stealing:188}}
+,{State:'基隆市',value:{thievery:25, rape:2, robbery:1, stealing:0, motor_stealing:49, drugs:254, car_stealing:8}}
+,{State:'新竹市',value:{thievery:14, rape:3, robbery:0, stealing:0, motor_stealing:91, drugs:79, car_stealing:29}}
+,{State:'嘉義市',value:{thievery:3, rape:1, robbery:0, stealing:0, motor_stealing:19, drugs:81, car_stealing:25}}
+,{State:'新竹縣',value:{thievery:9, rape:0, robbery:2, stealing:2, motor_stealing:103, drugs:201, car_stealing:70}}
+,{State:'苗栗縣',value:{thievery:21, rape:1, robbery:3, stealing:2, motor_stealing:53, drugs:100, car_stealing:55}}
+,{State:'彰化縣',value:{thievery:44, rape:10, robbery:4, stealing:5, motor_stealing:88, drugs:305, car_stealing:51}}
+,{State:'南投縣',value:{thievery:13, rape:5, robbery:2, stealing:0, motor_stealing:63, drugs:190, car_stealing:36}}
+,{State:'雲林縣',value:{thievery:15, rape:0, robbery:8, stealing:1, motor_stealing:49, drugs:158, car_stealing:26}}
+,{State:'嘉義縣',value:{thievery:7, rape:3, robbery:0, stealing:0, motor_stealing:32, drugs:76, car_stealing:18}}
+,{State:'屏東縣',value:{thievery:19, rape:1, robbery:3, stealing:5, motor_stealing:111, drugs:248, car_stealing:60}}
+,{State:'宜蘭縣',value:{thievery:24, rape:0, robbery:3, stealing:4, motor_stealing:29, drugs:148, car_stealing:21}}
+,{State:'花蓮縣',value:{thievery:14, rape:3, robbery:0, stealing:1, motor_stealing:34, drugs:163, car_stealing:10}}
+,{State:'台東縣',value:{thievery:6, rape:0, robbery:1, stealing:0, motor_stealing:20, drugs:36, car_stealing:1}}
+,{State:'澎湖縣',value:{thievery:12, rape:1, robbery:0, stealing:0, motor_stealing:4, drugs:3, car_stealing:3}}
 ,];
 
-//console.log(freqData[dataId]);
-dashboard('#dashboard',freqData[dataId]);
+dashboard('#dashboard',valueData[dataId]);
 </script>
